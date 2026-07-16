@@ -18,7 +18,7 @@ import FWCore.ParameterSet.Config as cms
 
 # HHBBTT: ───────────────────────── HHbbtt knobs ─────────────────────────
 KEEP_PF    = True    # HHBBTT: group vote pending; False drops the ScoutingPFCandidate table (one-line change)
-MAX_EVENTS = 20000   # HHBBTT: smoke default; -1 for full file
+MAX_EVENTS = -1      # HHBBTT: PRODUCTION (was 20000 smoke default)
 # HHBBTT: ─────────────────────────────────────────────────────────────────
 
 from Configuration.Eras.Era_Run3_2024_cff import Run3_2024
@@ -218,6 +218,24 @@ if hasattr(process, 'scoutingPFJetRecluster2MCTableTask'):          # MC only
 # (custom_run3scouting_cff.py:100). KEEP_PF=True calls addScoutingPFCandidate.
 if KEEP_PF:
     process = addScoutingPFCandidate(process)
+
+# HHBBTT: whitelist v3 — drop the muon track-parametrization block
+# (Jan-Frederik 2026-07-11: reconstruction-only, safely droppable; verified
+# none feeds muon-ID construction). NanoAOD writes whole FlatTables as EDM
+# products, so this must happen at the Var level, not via outputCommands.
+_MUON_TRK_DROP = [
+    "trk_lambda", "trk_lambdaError", "trk_lambda_dsz_cov", "trk_lambda_dxy_cov",
+    "trk_lambda_phi_cov", "trk_ndof", "trk_phi", "trk_phiError",
+    "trk_phi_dsz_cov", "trk_phi_dxy_cov", "trk_pt", "trk_qoverp",
+    "trk_qoverpError", "trk_qoverp_dsz_cov", "trk_qoverp_dxy_cov",
+    "trk_qoverp_lambda_cov", "trk_qoverp_phi_cov", "trk_vx", "trk_vy", "trk_vz",
+]
+for _v in _MUON_TRK_DROP:
+    if hasattr(process.scoutingMuonVtxTable.variables, _v):
+        delattr(process.scoutingMuonVtxTable.variables, _v)
+    # HHBBTT: NoVtx mirror PENDING Marc/JFS confirm — uncomment to enable:
+    # if hasattr(process.scoutingMuonNoVtxTable.variables, _v):
+    #     delattr(process.scoutingMuonNoVtxTable.variables, _v)
 
 
 # Customisation from command line
