@@ -17,7 +17,7 @@ import FWCore.ParameterSet.Config as cms
 
 # HHBBTT: ───────────────────────── HHbbtt knobs ─────────────────────────
 KEEP_PF    = True    # HHBBTT: group vote pending; False drops the ScoutingPFCandidate table (one-line change)
-MAX_EVENTS = 20000   # HHBBTT: smoke default; -1 for full file
+MAX_EVENTS = -1      # HHBBTT: PRODUCTION (was 20000 smoke default)
 # HHBBTT: ─────────────────────────────────────────────────────────────────
 
 from Configuration.Eras.Era_Run3_2024_cff import Run3_2024
@@ -206,6 +206,22 @@ if hasattr(process, 'scoutingPFJetRecluster2MCTableTask'):          # data: no-o
     process.scoutingPFJetRecluster2MCTableTask.remove(process.scoutingPFJetRecluster2FlavourCategory)
     del process.scoutingPFJetRecluster2MCTable
     del process.scoutingPFJetRecluster2FlavourCategory
+
+# HHBBTT: whitelist v3 — drop the 20 muon track-parametrization vars (JFS 2026-07-11).
+# outputCommands cannot drop FlatTable columns -> delete the Var entries at table level.
+_MUON_TRK_DROP = [
+    "trk_lambda", "trk_lambdaError", "trk_lambda_dsz_cov", "trk_lambda_dxy_cov",
+    "trk_lambda_phi_cov", "trk_ndof", "trk_phi", "trk_phiError",
+    "trk_phi_dsz_cov", "trk_phi_dxy_cov", "trk_pt", "trk_qoverp",
+    "trk_qoverpError", "trk_qoverp_dsz_cov", "trk_qoverp_dxy_cov",
+    "trk_qoverp_lambda_cov", "trk_qoverp_phi_cov", "trk_vx", "trk_vy", "trk_vz",
+]
+for _v in _MUON_TRK_DROP:
+    if hasattr(process.scoutingMuonVtxTable.variables, _v):
+        delattr(process.scoutingMuonVtxTable.variables, _v)
+    # HHBBTT: NoVtx mirror PENDING Marc/JFS confirm — uncomment to enable:
+    # if hasattr(process.scoutingMuonNoVtxTable.variables, _v):
+    #     delattr(process.scoutingMuonNoVtxTable.variables, _v)
 
 # HHBBTT: PF-candidate table — stock scouting nano does NOT write it. KEEP_PF=True keeps it.
 if KEEP_PF:
